@@ -1,3 +1,5 @@
+from typing import Any
+
 from evalrag.config import get_settings
 
 _ROUTER = (
@@ -18,6 +20,8 @@ _HYDE = (
 
 
 class QueryTransformer:
+    client: Any
+
     def __init__(self, client: object | None = None) -> None:
         if client is None:
             from openai import OpenAI
@@ -31,12 +35,17 @@ class QueryTransformer:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0, max_tokens=max_tokens,
         )
-        return r.choices[0].message.content.strip()
+        text: str = r.choices[0].message.content.strip()
+        return text
 
     def transform(self, question: str) -> list[str]:
         cls = self._call(_ROUTER.format(q=question), max_tokens=8).lower()
         if cls.startswith("multi"):
-            lines = [ln.strip() for ln in self._call(_DECOMP.format(q=question)).splitlines() if ln.strip()]
+            lines = [
+                ln.strip()
+                for ln in self._call(_DECOMP.format(q=question)).splitlines()
+                if ln.strip()
+            ]
             return lines or [question]
         if cls.startswith("abstract"):
             return [self._call(_HYDE.format(q=question))]

@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 from uuid import UUID
 
 import httpx
@@ -42,11 +43,12 @@ def run_l2(doc_id: UUID, api_base: str = "http://localhost:8000",
                          is_adversarial=qa.is_adversarial))
         s.commit()
 
-    def query_fn(q: str) -> dict:
+    def query_fn(q: str) -> dict[str, Any]:
         r = httpx.post(f"{api_base}/query",
                        json={"doc_id": str(doc_id), "question": q}, timeout=60)
         r.raise_for_status()
-        return r.json()
+        data: dict[str, Any] = r.json()
+        return data
 
     try:
         report = evaluate(qas, query_fn=query_fn)

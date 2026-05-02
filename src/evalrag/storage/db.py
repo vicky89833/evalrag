@@ -14,7 +14,9 @@ def get_engine() -> Engine:
 
 @lru_cache(maxsize=1)
 def get_sessionmaker() -> sessionmaker[Session]:
-    return sessionmaker(bind=get_engine(), autoflush=False, autocommit=False, expire_on_commit=False)
+    return sessionmaker(
+        bind=get_engine(), autoflush=False, autocommit=False, expire_on_commit=False
+    )
 
 
 def SessionLocal() -> Session:  # noqa: N802 — preserves call-site `SessionLocal()` ergonomics

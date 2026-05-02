@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from evalrag.core.eval.trust_scorer import TrustScore, TrustScorer
+from evalrag.core.eval.trust_scorer import TrustScorer
 from evalrag.core.generation.generator import Answer
 from evalrag.core.retrieval import Hit
 
@@ -26,7 +26,9 @@ def test_full_score_green_band():
     j = MagicMock()
     j.judge.return_value = 1.0
     s = TrustScorer(judge=j)
-    out = s.score(_answer(text="Cats are mammals [1]."), [_hit(1, "Cats are mammals.")], query="cats?")
+    out = s.score(
+        _answer(text="Cats are mammals [1]."), [_hit(1, "Cats are mammals.")], query="cats?"
+    )
     assert out.faithfulness == 1.0
     assert out.overall >= 80
     assert out.band == "green"

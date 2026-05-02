@@ -39,7 +39,9 @@ def test_adversarial_questions_appended():
     client = MagicMock()
     gen = MagicMock(choices=[MagicMock(message=MagicMock(content="Q: What? A: A."))])
     val = MagicMock(choices=[MagicMock(message=MagicMock(content="yes"))])
-    adv = MagicMock(choices=[MagicMock(message=MagicMock(content="What is the price of tea in Mars?"))])
+    adv = MagicMock(
+        choices=[MagicMock(message=MagicMock(content="What is the price of tea in Mars?"))]
+    )
     client.chat.completions.create.side_effect = [gen, val, adv, adv]
     g = GoldenGenerator(client=client)
     qas = g.generate(_chunks(10), n_questions=1, n_adversarial=2)

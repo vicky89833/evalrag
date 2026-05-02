@@ -10,7 +10,8 @@ pytestmark = pytest.mark.integration
 
 def _seed(db_session):
     doc = Doc(filename="t.txt", status="ready")
-    db_session.add(doc); db_session.flush()
+    db_session.add(doc)
+    db_session.flush()
     rng = np.random.default_rng(0)
     chunks = []
     for i in range(5):
@@ -18,7 +19,8 @@ def _seed(db_session):
         v /= np.linalg.norm(v)
         chunks.append(Chunk(doc_id=doc.id, chunk_id=f"c{i}", text=f"text {i}",
                             embedding=v.tolist(), ts_vec="", parent_id=None, metadata_={}))
-    db_session.add_all(chunks); db_session.commit()
+    db_session.add_all(chunks)
+    db_session.commit()
     return doc, chunks
 
 

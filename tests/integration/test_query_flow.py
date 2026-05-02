@@ -4,8 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from evalrag.api.deps import (get_generator, get_query_transformer,
-                              get_session_dep, get_trust_scorer)
+from evalrag.api.deps import get_generator, get_query_transformer, get_session_dep, get_trust_scorer
 from evalrag.api.main import app
 from evalrag.core.eval.trust_scorer import TrustScore
 from evalrag.core.generation.generator import Answer

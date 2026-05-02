@@ -1,4 +1,3 @@
-from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -6,7 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from evalrag.api.main import app, get_session_dep
-from evalrag.storage.models import Chunk, Doc
+from evalrag.storage.models import Chunk
 
 pytestmark = pytest.mark.integration
 

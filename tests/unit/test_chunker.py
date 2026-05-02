@@ -38,6 +38,7 @@ def test_plain_chunks_have_default_section():
 
 def test_chunker_raises_on_empty():
     import pytest
+
     from evalrag.core.ingest.chunker import ChunkerError
     with pytest.raises(ChunkerError):
         chunk(Document(text="", metadata={"filename": "x", "ext": ".txt"}))

@@ -1,7 +1,6 @@
 import json
-from pathlib import Path
 
-from evalrag.core.eval.regression_runner import RegressionRunner, RegressionReport
+from evalrag.core.eval.regression_runner import RegressionReport, RegressionRunner
 
 
 def test_loads_regression_set(tmp_path):

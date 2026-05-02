@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
 from dataclasses import dataclass
+from typing import Any
 
 from evalrag.core.ingest.chunker import Chunk
 
@@ -30,6 +31,8 @@ class GoldenQA:
 
 
 class GoldenGenerator:
+    client: Any
+
     def __init__(self, client: object | None = None, model: str = "gpt-4o-mini") -> None:
         if client is None:
             from openai import OpenAI
@@ -64,7 +67,8 @@ class GoldenGenerator:
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7, max_tokens=200,
         )
-        return r.choices[0].message.content.strip()
+        text: str = r.choices[0].message.content.strip()
+        return text
 
     def _parse_qa(self, text: str) -> tuple[str, str] | None:
         m = re.search(r"Q:\s*(.+?)\s*A:\s*(.+)", text, re.S)
@@ -78,17 +82,19 @@ class GoldenGenerator:
         candidates: list[tuple[GoldenQA, str]] = []
         for c in sample:
             raw = self._call(_GEN_PROMPT.format(text=c.text))
-            qa = self._parse_qa(raw)
-            if qa is None:
+            parsed = self._parse_qa(raw)
+            if parsed is None:
                 continue
-            candidates.append((GoldenQA(question=qa[0], expected_answer=qa[1],
+            candidates.append((GoldenQA(question=parsed[0], expected_answer=parsed[1],
                                         source_chunk_id=c.chunk_id), c.text))
 
         survivors: list[GoldenQA] = []
-        for qa, text in candidates:
-            verdict = self._call(_VAL_PROMPT.format(q=qa.question, a=qa.expected_answer, text=text))
+        for cand, ctext in candidates:
+            verdict = self._call(
+                _VAL_PROMPT.format(q=cand.question, a=cand.expected_answer, text=ctext)
+            )
             if verdict.lower().startswith("yes"):
-                survivors.append(qa)
+                survivors.append(cand)
 
         topic_hint = (chunks[0].text[:80] if chunks else "the document").replace("\n", " ")
         for _ in range(n_adversarial):

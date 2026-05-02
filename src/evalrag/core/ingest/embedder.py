@@ -15,6 +15,6 @@ class Embedder:
     def embed(self, texts: Sequence[str]) -> np.ndarray:
         if not texts:
             return np.zeros((0, self._dim), dtype=np.float32)
-        return self._model.encode(
+        return self._model.encode(  # type: ignore[no-any-return]
             list(texts), normalize_embeddings=True, convert_to_numpy=True, batch_size=32
         )

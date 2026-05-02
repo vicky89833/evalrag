@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 import numpy as np
 
@@ -24,6 +24,8 @@ class FaithfulnessJudge(Protocol):
 
 
 class GPTJudge:
+    client: Any
+
     def __init__(self, client: object | None = None) -> None:
         if client is None:
             from openai import OpenAI

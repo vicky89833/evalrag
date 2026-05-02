@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any
 
 from evalrag.config import get_settings
 from evalrag.core.generation.prompts import ANSWER_SYSTEM, build_user_prompt
@@ -21,11 +21,9 @@ class Answer:
     cost_usd: float
 
 
-class _Anthropic(Protocol):
-    def messages(self) -> object: ...
-
-
 class Generator:
+    client: Any
+
     def __init__(self, client: object | None = None) -> None:
         if client is None:
             from anthropic import Anthropic

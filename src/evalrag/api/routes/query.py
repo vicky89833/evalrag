@@ -6,9 +6,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from evalrag.api.deps import (get_embedder, get_generator,
-                              get_query_transformer, get_reranker,
-                              get_session_dep, get_trust_scorer)
+from evalrag.api.deps import (
+    get_embedder,
+    get_generator,
+    get_query_transformer,
+    get_reranker,
+    get_session_dep,
+    get_trust_scorer,
+)
 from evalrag.config import get_settings
 from evalrag.core.eval.trust_scorer import TrustScorer
 from evalrag.core.generation.generator import Generator
@@ -22,6 +27,13 @@ from evalrag.core.retrieval.vector_store import VectorStore
 from evalrag.storage.models import Doc, QueryLog
 
 router = APIRouter()
+
+_SESSION_DEP = Depends(get_session_dep)
+_EMBEDDER_DEP = Depends(get_embedder)
+_RERANKER_DEP = Depends(get_reranker)
+_GENERATOR_DEP = Depends(get_generator)
+_TRUST_DEP = Depends(get_trust_scorer)
+_TRANSFORMER_DEP = Depends(get_query_transformer)
 
 _INJECTION_RE = re.compile(r"(ignore previous|system prompt|disregard.*instruction)", re.I)
 
@@ -52,13 +64,13 @@ class QueryReq(BaseModel):
 @router.post("/query")
 def query(
     req: QueryReq,
-    session: Session = Depends(get_session_dep),
-    embedder: Embedder = Depends(get_embedder),
-    reranker: Reranker = Depends(get_reranker),
-    generator: Generator = Depends(get_generator),
-    trust_scorer: TrustScorer = Depends(get_trust_scorer),
-    transformer: QueryTransformer = Depends(get_query_transformer),
-) -> dict:
+    session: Session = _SESSION_DEP,
+    embedder: Embedder = _EMBEDDER_DEP,
+    reranker: Reranker = _RERANKER_DEP,
+    generator: Generator = _GENERATOR_DEP,
+    trust_scorer: TrustScorer = _TRUST_DEP,
+    transformer: QueryTransformer = _TRANSFORMER_DEP,
+) -> dict[str, object]:
     s = get_settings()
     if session.get(Doc, req.doc_id) is None:
         raise HTTPException(404, "doc not found")

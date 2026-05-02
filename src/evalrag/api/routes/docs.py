@@ -8,21 +8,26 @@ from sqlalchemy.orm import Session
 from evalrag.api.deps import get_embedder, get_session_dep
 from evalrag.config import get_settings
 from evalrag.core.eval.orchestration import run_l2
-from evalrag.core.ingest.chunker import ChunkerError, chunk as chunk_doc
+from evalrag.core.ingest.chunker import ChunkerError
+from evalrag.core.ingest.chunker import chunk as chunk_doc
 from evalrag.core.ingest.embedder import Embedder
 from evalrag.core.ingest.loader import LoaderError, load
 from evalrag.storage.models import Chunk, Doc
 
 router = APIRouter()
 
+_FILE_DEP = File(...)
+_SESSION_DEP = Depends(get_session_dep)
+_EMBEDDER_DEP = Depends(get_embedder)
+
 
 @router.post("/docs")
 async def upload(
     background: BackgroundTasks,
-    file: UploadFile = File(...),
-    session: Session = Depends(get_session_dep),
-    embedder: Embedder = Depends(get_embedder),
-) -> dict:
+    file: UploadFile = _FILE_DEP,
+    session: Session = _SESSION_DEP,
+    embedder: Embedder = _EMBEDDER_DEP,
+) -> dict[str, object]:
     s = get_settings()
     raw = await file.read()
     if len(raw) > s.MAX_UPLOAD_MB * 1024 * 1024:
@@ -66,7 +71,7 @@ async def upload(
 
 
 @router.get("/docs/{doc_id}")
-def get_doc(doc_id: UUID, session: Session = Depends(get_session_dep)) -> dict:
+def get_doc(doc_id: UUID, session: Session = _SESSION_DEP) -> dict[str, object]:
     d = session.get(Doc, doc_id)
     if d is None:
         raise HTTPException(404, "not found")
