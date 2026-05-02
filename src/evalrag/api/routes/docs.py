@@ -27,6 +27,8 @@ async def upload(
         raise HTTPException(413, f"file exceeds {s.MAX_UPLOAD_MB} MB")
 
     suffix = Path(file.filename or "").suffix.lower() or ".txt"
+    # NOTE: tempfile cleanup deferred — see plan §6 / Task 7.x. Files in /tmp
+    # are flushed by macOS on reboot; acceptable for the demo's lifetime.
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
         tmp.write(raw)
         tmp_path = Path(tmp.name)
@@ -46,7 +48,8 @@ async def upload(
 
     vectors = embedder.embed([c.text for c in chunks])
 
-    doc = Doc(filename=file.filename or tmp_path.name, status="ready")
+    safe_name = Path(file.filename or tmp_path.name).name  # basename only
+    doc = Doc(filename=safe_name, status="ready")
     session.add(doc)
     session.flush()
 
