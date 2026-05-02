@@ -1,3 +1,4 @@
+import re
 import time
 from uuid import UUID
 
@@ -21,6 +22,25 @@ from evalrag.core.retrieval.vector_store import VectorStore
 from evalrag.storage.models import Doc, QueryLog
 
 router = APIRouter()
+
+_INJECTION_RE = re.compile(r"(ignore previous|system prompt|disregard.*instruction)", re.I)
+
+
+def _strip_injection(hits: list[Hit]) -> list[Hit]:
+    return [h for h in hits if not _INJECTION_RE.search(h.text)]
+
+
+def _truncate_to_token_budget(hits: list[Hit], max_tokens: int) -> list[Hit]:
+    # rough: 4 chars ≈ 1 token
+    out: list[Hit] = []
+    used = 0
+    for h in hits:
+        cost = max(1, len(h.text) // 4)
+        if used + cost > max_tokens:
+            break
+        out.append(h)
+        used += cost
+    return out or hits[:1]
 
 
 class QueryReq(BaseModel):
@@ -61,6 +81,12 @@ def query(
 
     top = (reranker.rerank(req.question, fused, top=s.TOP_K_RERANK)
            if req.use_reranker else fused[:s.TOP_K_RERANK])
+    top = _strip_injection(top)
+    top = _truncate_to_token_budget(top, max_tokens=s.MAX_CTX_TOKENS)
+    if not top:
+        return {"answer": "The document does not contain an answer to that question.",
+                "citations": [], "retrieval_trace": [], "latency_ms": 0,
+                "cost_usd": 0.0, "trust_score": None}
     answer = generator.generate(req.question, top)
     elapsed = int((time.perf_counter() - started) * 1000)
 
