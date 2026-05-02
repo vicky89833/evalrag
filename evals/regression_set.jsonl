@@ -1,0 +1,30 @@
+{"id": "q01", "type": "factual", "question": "What is the configured chunk size for EvalRAG?", "expected_answer_substrings": ["512"], "must_refuse": false}
+{"id": "q02", "type": "factual", "question": "Which embedding model does EvalRAG use?", "expected_answer_substrings": ["bge-large-en-v1.5"], "must_refuse": false}
+{"id": "q03", "type": "factual", "question": "What is the target p95 latency for end-to-end queries?", "expected_answer_substrings": ["4"], "must_refuse": false}
+{"id": "q04", "type": "factual", "question": "What is the target cost per query?", "expected_answer_substrings": ["0.02"], "must_refuse": false}
+{"id": "q05", "type": "factual", "question": "What is the embedding dimensionality used by EvalRAG?", "expected_answer_substrings": ["1024"], "must_refuse": false}
+{"id": "q06", "type": "factual", "question": "Which reranker model does EvalRAG use?", "expected_answer_substrings": ["bge-reranker-v2-m3"], "must_refuse": false}
+{"id": "q07", "type": "factual", "question": "What is the chunk overlap setting?", "expected_answer_substrings": ["64"], "must_refuse": false}
+{"id": "q08", "type": "factual", "question": "What is TOP_K_RETRIEVE configured to?", "expected_answer_substrings": ["20"], "must_refuse": false}
+{"id": "q09", "type": "factual", "question": "Which LLM is used as the answer generator?", "expected_answer_substrings": ["claude", "sonnet"], "must_refuse": false}
+{"id": "q10", "type": "factual", "question": "What is the maximum file size allowed for uploads?", "expected_answer_substrings": ["50"], "must_refuse": false}
+{"id": "q11", "type": "multi-hop", "question": "Why was LangChain excluded from EvalRAG and which SDKs are used instead?", "expected_answer_substrings": ["langchain", "anthropic", "openai"], "must_refuse": false}
+{"id": "q12", "type": "multi-hop", "question": "Why is the judge LLM from a different model family than the answer LLM, and which models are used?", "expected_answer_substrings": ["claude", "gpt-4o-mini", "bias"], "must_refuse": false}
+{"id": "q13", "type": "multi-hop", "question": "What happens when both dense and sparse retrievers return zero hits, and how does this affect the trust score?", "expected_answer_substrings": ["refusal", "trust"], "must_refuse": false}
+{"id": "q14", "type": "multi-hop", "question": "How does the auto-golden generation pipeline test refusal behavior, and what metric measures it?", "expected_answer_substrings": ["adversarial", "refusal_accuracy"], "must_refuse": false}
+{"id": "q15", "type": "multi-hop", "question": "What chunking parameters are used and which library provides the splitter?", "expected_answer_substrings": ["512", "64", "llamaindex"], "must_refuse": false}
+{"id": "q16", "type": "multi-hop", "question": "Which database stores both vectors and keyword indexes, and what extensions or features enable each?", "expected_answer_substrings": ["postgres", "pgvector", "ts_vec"], "must_refuse": false}
+{"id": "q17", "type": "comparative", "question": "What is the difference between L1 and L2 evals in terms of when they run?", "expected_answer_substrings": ["live", "upload"], "must_refuse": false}
+{"id": "q18", "type": "comparative", "question": "How does the L3 regression set differ from L2 auto-goldens in how it is created?", "expected_answer_substrings": ["hand", "auto"], "must_refuse": false}
+{"id": "q19", "type": "comparative", "question": "What is the difference between dense and sparse retrieval in EvalRAG?", "expected_answer_substrings": ["pgvector", "ts_vec"], "must_refuse": false}
+{"id": "q20", "type": "comparative", "question": "How does the green trust band differ from the red band in score thresholds?", "expected_answer_substrings": ["80", "60"], "must_refuse": false}
+{"id": "q21", "type": "comparative", "question": "How do factual and abstract query types get handled differently by the query transformer?", "expected_answer_substrings": ["raw", "hyde"], "must_refuse": false}
+{"id": "q22", "type": "comparative", "question": "What is the cost difference between the answer generation step and the faithfulness judge step per query?", "expected_answer_substrings": ["0.015", "0.0004"], "must_refuse": false}
+{"id": "q23", "type": "refusal", "question": "What is the capital of France?", "expected_answer_substrings": [], "must_refuse": true}
+{"id": "q24", "type": "refusal", "question": "How do I cook spaghetti carbonara?", "expected_answer_substrings": [], "must_refuse": true}
+{"id": "q25", "type": "refusal", "question": "Who won the 2024 FIFA World Cup?", "expected_answer_substrings": [], "must_refuse": true}
+{"id": "q26", "type": "refusal", "question": "What is the chemical formula for caffeine?", "expected_answer_substrings": [], "must_refuse": true}
+{"id": "q27", "type": "out-of-scope", "question": "What programming language does the EvalRAG iOS client use?", "expected_answer_substrings": [], "must_refuse": true}
+{"id": "q28", "type": "out-of-scope", "question": "What is the GDPR data retention period for user uploads in EvalRAG?", "expected_answer_substrings": [], "must_refuse": true}
+{"id": "q29", "type": "out-of-scope", "question": "Which Kubernetes ingress controller is used to deploy EvalRAG?", "expected_answer_substrings": [], "must_refuse": true}
+{"id": "q30", "type": "out-of-scope", "question": "What is EvalRAG's pricing tier for enterprise customers?", "expected_answer_substrings": [], "must_refuse": true}
