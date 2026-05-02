@@ -48,7 +48,7 @@ class Golden(Base):
     doc_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("docs.id", ondelete="CASCADE"))
     question: Mapped[str] = mapped_column(Text)
     expected_answer_chunks: Mapped[list[str]] = mapped_column(JSON)
-    is_adversarial: Mapped[bool] = mapped_column(default=False, server_default=func.false())
+    is_adversarial: Mapped[bool] = mapped_column(default=False, server_default="false")
 
 
 class EvalRun(Base):
