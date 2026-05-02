@@ -35,3 +35,26 @@ def test_rejects_empty(tmp_path):
     p.write_text("")
     with pytest.raises(LoaderError, match="empty"):
         load(p)
+
+
+def test_rejects_missing_file(tmp_path):
+    with pytest.raises(LoaderError, match="not found"):
+        load(tmp_path / "does_not_exist.txt")
+
+
+def test_rejects_encrypted_pdf(tmp_path, monkeypatch):
+    # Use a real (small) pdf and force is_encrypted via monkeypatch on PdfReader
+    from evalrag.core.ingest import loader as loader_mod
+
+    class FakeReader:
+        is_encrypted = True
+        pages: list = []
+
+        def __init__(self, _):
+            pass
+
+    monkeypatch.setattr(loader_mod.pypdf, "PdfReader", FakeReader)
+    fake_pdf = tmp_path / "x.pdf"
+    fake_pdf.write_bytes(b"%PDF-1.4\n%fake")
+    with pytest.raises(LoaderError, match="encrypted"):
+        load(fake_pdf)
