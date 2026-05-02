@@ -38,19 +38,6 @@ def upgrade() -> None:
     )
     op.execute("CREATE INDEX ix_chunks_ts_vec ON chunks USING gin (ts_vec)")
 
-    op.execute("""
-CREATE FUNCTION chunks_ts_vec_trigger() RETURNS trigger AS $$
-BEGIN
-  NEW.ts_vec := to_tsvector('english', NEW.text);
-  RETURN NEW;
-END
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER chunks_ts_vec_update
-BEFORE INSERT OR UPDATE OF text ON chunks
-FOR EACH ROW EXECUTE FUNCTION chunks_ts_vec_trigger();
-""")
-
     op.create_table("goldens",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
         sa.Column("doc_id", UUID(as_uuid=True), sa.ForeignKey("docs.id", ondelete="CASCADE"), nullable=False),
@@ -86,7 +73,5 @@ def downgrade() -> None:
     op.drop_table("query_log")
     op.drop_table("eval_runs")
     op.drop_table("goldens")
-    op.execute("DROP TRIGGER IF EXISTS chunks_ts_vec_update ON chunks")
-    op.execute("DROP FUNCTION IF EXISTS chunks_ts_vec_trigger()")
     op.drop_table("chunks")
     op.drop_table("docs")
