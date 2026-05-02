@@ -3,6 +3,7 @@ from collections.abc import Iterator
 
 from sqlalchemy.orm import Session
 
+from evalrag.core.eval.trust_scorer import TrustScorer
 from evalrag.core.generation.generator import Generator
 from evalrag.core.ingest.embedder import Embedder
 from evalrag.core.retrieval.reranker import Reranker
@@ -14,6 +15,8 @@ _reranker: Reranker | None = None
 _reranker_lock = threading.Lock()
 _generator: Generator | None = None
 _generator_lock = threading.Lock()
+_trust: TrustScorer | None = None
+_trust_lock = threading.Lock()
 
 
 def get_session_dep() -> Iterator[Session]:
@@ -49,3 +52,12 @@ def get_generator() -> Generator:
             if _generator is None:
                 _generator = Generator()
     return _generator
+
+
+def get_trust_scorer() -> TrustScorer:
+    global _trust
+    if _trust is None:
+        with _trust_lock:
+            if _trust is None:
+                _trust = TrustScorer()
+    return _trust

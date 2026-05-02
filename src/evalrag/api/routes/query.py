@@ -6,8 +6,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from evalrag.api.deps import (get_embedder, get_generator, get_reranker,
-                              get_session_dep)
+                              get_session_dep, get_trust_scorer)
 from evalrag.config import get_settings
+from evalrag.core.eval.trust_scorer import TrustScorer
 from evalrag.core.generation.generator import Generator
 from evalrag.core.ingest.embedder import Embedder
 from evalrag.core.retrieval.bm25_index import BM25Index
@@ -32,6 +33,7 @@ def query(
     embedder: Embedder = Depends(get_embedder),
     reranker: Reranker = Depends(get_reranker),
     generator: Generator = Depends(get_generator),
+    trust_scorer: TrustScorer = Depends(get_trust_scorer),
 ) -> dict:
     s = get_settings()
     if session.get(Doc, req.doc_id) is None:
@@ -53,9 +55,18 @@ def query(
     answer = generator.generate(req.question, top)
     elapsed = int((time.perf_counter() - started) * 1000)
 
+    trust = trust_scorer.score(answer, top, req.question)
+    trust_payload = (
+        {"overall": trust.overall, "band": trust.band,
+         "breakdown": {"faithfulness": trust.faithfulness,
+                       "context_relevance": trust.context_relevance,
+                       "citation_coverage": trust.citation_coverage}}
+        if trust else None
+    )
+
     trace = [{"chunk_id": h.chunk_id, "score": h.score, "source": h.source} for h in top]
     log = QueryLog(doc_id=req.doc_id, question=req.question, answer=answer.text,
-                   trust_score=None, retrieval_trace={"top": trace},
+                   trust_score=trust_payload, retrieval_trace={"top": trace},
                    latency_ms=elapsed, cost_usd=answer.cost_usd)
     session.add(log)
     session.commit()
@@ -66,5 +77,5 @@ def query(
         "retrieval_trace": trace,
         "latency_ms": elapsed,
         "cost_usd": answer.cost_usd,
-        "trust_score": None,
+        "trust_score": trust_payload,
     }

@@ -4,8 +4,9 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 
-from evalrag.api.deps import get_generator, get_session_dep
+from evalrag.api.deps import get_generator, get_session_dep, get_trust_scorer
 from evalrag.api.main import app
+from evalrag.core.eval.trust_scorer import TrustScore
 from evalrag.core.generation.generator import Answer
 
 pytestmark = pytest.mark.integration
@@ -23,6 +24,13 @@ def client(db_session):
         tokens_in=100, tokens_out=10, cost_usd=0.001,
     )
     app.dependency_overrides[get_generator] = lambda: fake
+
+    fake_trust = MagicMock()
+    fake_trust.score.return_value = TrustScore(
+        overall=88, faithfulness=0.95, context_relevance=0.8,
+        citation_coverage=1.0, band="green",
+    )
+    app.dependency_overrides[get_trust_scorer] = lambda: fake_trust
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -37,3 +45,5 @@ def test_query_returns_answer_and_trace(client):
     assert body["citations"] == [1]
     assert "retrieval_trace" in body
     assert body["latency_ms"] >= 0
+    assert body["trust_score"]["overall"] == 88
+    assert body["trust_score"]["band"] == "green"
