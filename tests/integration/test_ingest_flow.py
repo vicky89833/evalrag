@@ -1,5 +1,6 @@
 from io import BytesIO
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,7 +16,8 @@ FIX = Path(__file__).parent.parent / "fixtures"
 @pytest.fixture
 def client(db_session):
     app.dependency_overrides[get_session_dep] = lambda: db_session
-    yield TestClient(app)
+    with patch("evalrag.api.routes.docs.run_l2"):
+        yield TestClient(app)
     app.dependency_overrides.clear()
 
 
@@ -24,7 +26,7 @@ def test_upload_txt_creates_doc_and_chunks(client, db_session):
     r = client.post("/docs", files=files)
     assert r.status_code == 200
     body = r.json()
-    assert body["status"] == "ready"
+    assert body["status"] == "ingested"
     doc_id = body["id"]
     chunks = db_session.query(Chunk).filter_by(doc_id=doc_id).all()
     assert len(chunks) >= 1

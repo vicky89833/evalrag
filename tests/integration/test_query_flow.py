@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -31,7 +31,9 @@ def client(db_session):
         citation_coverage=1.0, band="green",
     )
     app.dependency_overrides[get_trust_scorer] = lambda: fake_trust
-    yield TestClient(app)
+
+    with patch("evalrag.api.routes.docs.run_l2"):
+        yield TestClient(app)
     app.dependency_overrides.clear()
 
 

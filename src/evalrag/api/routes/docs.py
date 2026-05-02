@@ -2,11 +2,12 @@ import tempfile
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from evalrag.api.deps import get_embedder, get_session_dep
 from evalrag.config import get_settings
+from evalrag.core.eval.orchestration import run_l2
 from evalrag.core.ingest.chunker import ChunkerError, chunk as chunk_doc
 from evalrag.core.ingest.embedder import Embedder
 from evalrag.core.ingest.loader import LoaderError, load
@@ -17,6 +18,7 @@ router = APIRouter()
 
 @router.post("/docs")
 async def upload(
+    background: BackgroundTasks,
     file: UploadFile = File(...),
     session: Session = Depends(get_session_dep),
     embedder: Embedder = Depends(get_embedder),
@@ -58,7 +60,9 @@ async def upload(
                           embedding=v.tolist(), parent_id=c.parent_id,
                           metadata_=c.metadata, ts_vec=""))
     session.commit()
-    return {"id": str(doc.id), "filename": doc.filename, "chunks": len(chunks), "status": "ready"}
+    background.add_task(run_l2, doc.id)
+    return {"id": str(doc.id), "filename": doc.filename, "chunks": len(chunks),
+            "status": "ingested", "eval_status": "pending"}
 
 
 @router.get("/docs/{doc_id}")
