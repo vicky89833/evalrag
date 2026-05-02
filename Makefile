@@ -1,4 +1,4 @@
-.PHONY: install lint test test-int up down migrate ui api regression
+.PHONY: install lint test test-int migrate ui api regression
 
 install:
 	. .venv/bin/activate && pip install -e ".[dev]"
@@ -11,12 +11,6 @@ test:
 
 test-int:
 	. .venv/bin/activate && pytest -m integration
-
-up:
-	docker compose up -d
-
-down:
-	docker compose down
 
 migrate:
 	. .venv/bin/activate && alembic upgrade head
