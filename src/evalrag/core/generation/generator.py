@@ -5,6 +5,7 @@ from typing import Protocol
 from evalrag.config import get_settings
 from evalrag.core.generation.prompts import ANSWER_SYSTEM, build_user_prompt
 from evalrag.core.retrieval import Hit
+from evalrag.observability.tracer import trace_span
 
 # Sonnet 4.6 pricing (as of 2026-05): $3/MTok in, $15/MTok out
 _PRICE_IN = 3.0 / 1_000_000
@@ -32,6 +33,7 @@ class Generator:
         self.client = client
         self.model = get_settings().ANSWER_MODEL
 
+    @trace_span("generate")
     def generate(self, question: str, hits: list[Hit]) -> Answer:
         user = build_user_prompt(question, [h.text for h in hits])
         resp = self.client.messages.create(

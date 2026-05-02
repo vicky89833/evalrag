@@ -6,6 +6,7 @@ from evalrag.core.ingest.embedder import Embedder
 from evalrag.core.retrieval import Hit
 from evalrag.core.retrieval.bm25_index import BM25Index
 from evalrag.core.retrieval.vector_store import VectorStore
+from evalrag.observability.tracer import trace_span
 
 
 def rrf_fuse(rankings: Sequence[list[Hit]], k: int = 60, top: int = 20) -> list[Hit]:
@@ -25,6 +26,7 @@ class Retriever:
         self.bm = bm25
         self.emb = embedder
 
+    @trace_span("retrieve")
     def retrieve(self, query: str, k: int, doc_id: str) -> list[Hit]:
         qvec = self.emb.embed([query])[0]
         dense = self.vs.search(qvec, k=k, doc_id=doc_id)
