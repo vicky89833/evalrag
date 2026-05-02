@@ -1,0 +1,70 @@
+import time
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from evalrag.api.deps import (get_embedder, get_generator, get_reranker,
+                              get_session_dep)
+from evalrag.config import get_settings
+from evalrag.core.generation.generator import Generator
+from evalrag.core.ingest.embedder import Embedder
+from evalrag.core.retrieval.bm25_index import BM25Index
+from evalrag.core.retrieval.reranker import Reranker
+from evalrag.core.retrieval.retriever import Retriever
+from evalrag.core.retrieval.vector_store import VectorStore
+from evalrag.storage.models import Doc, QueryLog
+
+router = APIRouter()
+
+
+class QueryReq(BaseModel):
+    doc_id: UUID
+    question: str
+    use_reranker: bool = True
+
+
+@router.post("/query")
+def query(
+    req: QueryReq,
+    session: Session = Depends(get_session_dep),
+    embedder: Embedder = Depends(get_embedder),
+    reranker: Reranker = Depends(get_reranker),
+    generator: Generator = Depends(get_generator),
+) -> dict:
+    s = get_settings()
+    if session.get(Doc, req.doc_id) is None:
+        raise HTTPException(404, "doc not found")
+
+    started = time.perf_counter()
+    retriever = Retriever(VectorStore(session), BM25Index(session), embedder)
+    fused = retriever.retrieve(req.question, k=s.TOP_K_RETRIEVE, doc_id=str(req.doc_id))
+
+    if not fused:
+        return {
+            "answer": "The document does not contain an answer to that question.",
+            "citations": [], "retrieval_trace": [], "latency_ms": 0,
+            "cost_usd": 0.0, "trust_score": None,
+        }
+
+    top = (reranker.rerank(req.question, fused, top=s.TOP_K_RERANK)
+           if req.use_reranker else fused[:s.TOP_K_RERANK])
+    answer = generator.generate(req.question, top)
+    elapsed = int((time.perf_counter() - started) * 1000)
+
+    trace = [{"chunk_id": h.chunk_id, "score": h.score, "source": h.source} for h in top]
+    log = QueryLog(doc_id=req.doc_id, question=req.question, answer=answer.text,
+                   trust_score=None, retrieval_trace={"top": trace},
+                   latency_ms=elapsed, cost_usd=answer.cost_usd)
+    session.add(log)
+    session.commit()
+
+    return {
+        "answer": answer.text,
+        "citations": answer.citations,
+        "retrieval_trace": trace,
+        "latency_ms": elapsed,
+        "cost_usd": answer.cost_usd,
+        "trust_score": None,
+    }
