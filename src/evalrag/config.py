@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,5 +31,6 @@ class Settings(BaseSettings):
     PER_DOC_COST_CAP_USD: float = 1.0
 
 
+@lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings()  # type: ignore[call-arg]
