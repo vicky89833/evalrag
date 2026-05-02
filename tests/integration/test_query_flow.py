@@ -4,7 +4,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from evalrag.api.deps import get_generator, get_session_dep, get_trust_scorer
+from evalrag.api.deps import (get_generator, get_query_transformer,
+                              get_session_dep, get_trust_scorer)
 from evalrag.api.main import app
 from evalrag.core.eval.trust_scorer import TrustScore
 from evalrag.core.generation.generator import Answer
@@ -31,6 +32,10 @@ def client(db_session):
         citation_coverage=1.0, band="green",
     )
     app.dependency_overrides[get_trust_scorer] = lambda: fake_trust
+
+    fake_qt = MagicMock()
+    fake_qt.transform.side_effect = lambda q: [q]
+    app.dependency_overrides[get_query_transformer] = lambda: fake_qt
 
     with patch("evalrag.api.routes.docs.run_l2"):
         yield TestClient(app)

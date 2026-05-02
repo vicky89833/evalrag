@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from evalrag.core.eval.trust_scorer import TrustScorer
 from evalrag.core.generation.generator import Generator
 from evalrag.core.ingest.embedder import Embedder
+from evalrag.core.retrieval.query_transformer import QueryTransformer
 from evalrag.core.retrieval.reranker import Reranker
 from evalrag.storage.db import SessionLocal
 
@@ -17,6 +18,8 @@ _generator: Generator | None = None
 _generator_lock = threading.Lock()
 _trust: TrustScorer | None = None
 _trust_lock = threading.Lock()
+_qt: QueryTransformer | None = None
+_qt_lock = threading.Lock()
 
 
 def get_session_dep() -> Iterator[Session]:
@@ -61,3 +64,12 @@ def get_trust_scorer() -> TrustScorer:
             if _trust is None:
                 _trust = TrustScorer()
     return _trust
+
+
+def get_query_transformer() -> QueryTransformer:
+    global _qt
+    if _qt is None:
+        with _qt_lock:
+            if _qt is None:
+                _qt = QueryTransformer()
+    return _qt

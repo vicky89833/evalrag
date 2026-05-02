@@ -5,13 +5,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from evalrag.api.deps import (get_embedder, get_generator, get_reranker,
+from evalrag.api.deps import (get_embedder, get_generator,
+                              get_query_transformer, get_reranker,
                               get_session_dep, get_trust_scorer)
 from evalrag.config import get_settings
 from evalrag.core.eval.trust_scorer import TrustScorer
 from evalrag.core.generation.generator import Generator
 from evalrag.core.ingest.embedder import Embedder
+from evalrag.core.retrieval import Hit
 from evalrag.core.retrieval.bm25_index import BM25Index
+from evalrag.core.retrieval.query_transformer import QueryTransformer
 from evalrag.core.retrieval.reranker import Reranker
 from evalrag.core.retrieval.retriever import Retriever
 from evalrag.core.retrieval.vector_store import VectorStore
@@ -34,6 +37,7 @@ def query(
     reranker: Reranker = Depends(get_reranker),
     generator: Generator = Depends(get_generator),
     trust_scorer: TrustScorer = Depends(get_trust_scorer),
+    transformer: QueryTransformer = Depends(get_query_transformer),
 ) -> dict:
     s = get_settings()
     if session.get(Doc, req.doc_id) is None:
@@ -41,7 +45,12 @@ def query(
 
     started = time.perf_counter()
     retriever = Retriever(VectorStore(session), BM25Index(session), embedder)
-    fused = retriever.retrieve(req.question, k=s.TOP_K_RETRIEVE, doc_id=str(req.doc_id))
+    variants = transformer.transform(req.question)
+    all_hits: dict[str, Hit] = {}
+    for v in variants:
+        for h in retriever.retrieve(v, k=s.TOP_K_RETRIEVE, doc_id=str(req.doc_id)):
+            all_hits.setdefault(h.chunk_id, h)
+    fused = list(all_hits.values())[:s.TOP_K_RETRIEVE]
 
     if not fused:
         return {
