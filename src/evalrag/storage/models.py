@@ -21,7 +21,7 @@ class Doc(Base):
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     filename: Mapped[str] = mapped_column(String(512))
     uploaded_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())
-    status: Mapped[str] = mapped_column(String(32), default="pending")
+    status: Mapped[str] = mapped_column(String(32), default="pending", server_default="pending")
     eval_summary: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
@@ -33,7 +33,7 @@ class Chunk(Base):
     embedding: Mapped[list[float]] = mapped_column(Vector(EMBED_DIM))
     ts_vec: Mapped[str] = mapped_column(TSVECTOR)
     parent_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    metadata_: Mapped[dict] = mapped_column("metadata", JSON, default=dict)
+    metadata_: Mapped[dict] = mapped_column("metadata", JSON, default=dict, server_default="{}")
 
 
 Index("ix_chunks_embedding_hnsw", Chunk.embedding,
@@ -48,7 +48,7 @@ class Golden(Base):
     doc_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("docs.id", ondelete="CASCADE"))
     question: Mapped[str] = mapped_column(Text)
     expected_answer_chunks: Mapped[list[str]] = mapped_column(JSON)
-    is_adversarial: Mapped[bool] = mapped_column(default=False)
+    is_adversarial: Mapped[bool] = mapped_column(default=False, server_default=func.false())
 
 
 class EvalRun(Base):

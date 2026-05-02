@@ -32,7 +32,10 @@ def upgrade() -> None:
         sa.Column("parent_id", sa.String(64), nullable=True),
         sa.Column("metadata", sa.JSON, nullable=False, server_default="{}"),
     )
-    op.execute("CREATE INDEX ix_chunks_embedding_hnsw ON chunks USING hnsw (embedding vector_cosine_ops)")
+    op.execute(
+        "CREATE INDEX ix_chunks_embedding_hnsw ON chunks "
+        "USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)"
+    )
     op.execute("CREATE INDEX ix_chunks_ts_vec ON chunks USING gin (ts_vec)")
 
     op.create_table("goldens",
