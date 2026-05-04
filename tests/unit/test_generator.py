@@ -8,11 +8,17 @@ def _hit(i):
     return Hit(f"c{i}", "d", f"chunk text {i}", 0.5, "rerank")
 
 
+def _mock_resp(text: str, tokens_in: int, tokens_out: int) -> MagicMock:
+    return MagicMock(
+        choices=[MagicMock(message=MagicMock(content=text))],
+        usage=MagicMock(prompt_tokens=tokens_in, completion_tokens=tokens_out),
+    )
+
+
 def test_generate_returns_answer_and_citations():
     client = MagicMock()
-    client.messages.create.return_value = MagicMock(
-        content=[MagicMock(text="Cats are mammals [1]. They purr [2].")],
-        usage=MagicMock(input_tokens=120, output_tokens=10),
+    client.chat.completions.create.return_value = _mock_resp(
+        "Cats are mammals [1]. They purr [2].", 120, 10
     )
     g = Generator(client=client)
     out = g.generate("what are cats", [_hit(1), _hit(2)])
@@ -25,10 +31,7 @@ def test_generate_returns_answer_and_citations():
 
 def test_generate_extracts_only_referenced_indices():
     client = MagicMock()
-    client.messages.create.return_value = MagicMock(
-        content=[MagicMock(text="Only one [3].")],
-        usage=MagicMock(input_tokens=10, output_tokens=5),
-    )
+    client.chat.completions.create.return_value = _mock_resp("Only one [3].", 10, 5)
     g = Generator(client=client)
     out = g.generate("q", [_hit(i) for i in range(5)])
     assert out.citations == [3]
@@ -36,10 +39,7 @@ def test_generate_extracts_only_referenced_indices():
 
 def test_no_citations_marks_zero_coverage():
     client = MagicMock()
-    client.messages.create.return_value = MagicMock(
-        content=[MagicMock(text="Just an answer.")],
-        usage=MagicMock(input_tokens=10, output_tokens=5),
-    )
+    client.chat.completions.create.return_value = _mock_resp("Just an answer.", 10, 5)
     g = Generator(client=client)
     out = g.generate("q", [_hit(1)])
     assert out.citations == []

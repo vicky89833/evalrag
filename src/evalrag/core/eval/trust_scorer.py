@@ -4,6 +4,7 @@ from typing import Any, Protocol
 
 import numpy as np
 
+from evalrag.config import get_settings, make_llm_client
 from evalrag.core.generation.generator import Answer
 from evalrag.core.retrieval import Hit
 
@@ -28,8 +29,7 @@ class GPTJudge:
 
     def __init__(self, client: object | None = None) -> None:
         if client is None:
-            from openai import OpenAI
-            client = OpenAI()
+            client = make_llm_client()
         self.client = client
 
     def judge(self, question: str, answer_text: str, chunks: list[str]) -> float:
@@ -42,7 +42,7 @@ class GPTJudge:
             f"\n\nQuestion: {question}\nAnswer: {answer_text}\n\nContext:\n{ctx}\n\nScore:"
         )
         resp = self.client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=get_settings().JUDGE_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0, max_tokens=8,
         )
@@ -51,7 +51,15 @@ class GPTJudge:
         return float(m.group(0)) if m else 0.0
 
 
-def _band(overall: int, faithfulness: float, citation_coverage: float) -> str:
+_REFUSAL_RE = re.compile(r"document does not contain|cannot answer|no answer", re.I)
+
+
+def _band(
+    overall: int, faithfulness: float, citation_coverage: float, answer_text: str = ""
+) -> str:
+    # Refusals legitimately have no citations — judge them on faithfulness alone.
+    if _REFUSAL_RE.search(answer_text):
+        return "green" if faithfulness >= 0.8 else "amber"
     if faithfulness < 0.5 or citation_coverage == 0.0:
         return "red"
     if overall >= 80:
@@ -93,4 +101,4 @@ class TrustScorer:
         overall = int(round(100 * (FAITH_W * faith + RELEV_W * relev + CITE_W * cov)))
         return TrustScore(overall=overall, faithfulness=faith,
                           context_relevance=relev, citation_coverage=cov,
-                          band=_band(overall, faith, cov))
+                          band=_band(overall, faith, cov, answer.text))

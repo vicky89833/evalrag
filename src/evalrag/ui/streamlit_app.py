@@ -37,8 +37,14 @@ with st.sidebar:
         st.json(d)
 
 st.header("Chat")
-q = st.text_input("Ask the document a question")
-if q and st.session_state.doc_id and st.button("Ask"):
+placeholder = (
+    "Ask your next question"
+    if st.session_state.history
+    else "Ask the document a question"
+)
+disabled = st.session_state.doc_id is None
+q = st.chat_input(placeholder, disabled=disabled)
+if q and st.session_state.doc_id:
     with st.spinner("Thinking…"):
         r = httpx.post(f"{API}/query", json={
             "doc_id": st.session_state.doc_id,
@@ -50,6 +56,7 @@ if q and st.session_state.doc_id and st.button("Ask"):
     else:
         body = r.json()
         st.session_state.history.append((q, body))
+        st.rerun()
 
 for q_text, body in reversed(st.session_state.history):
     st.markdown(f"**Q:** {q_text}")

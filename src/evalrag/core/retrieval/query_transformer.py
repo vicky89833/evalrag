@@ -1,6 +1,6 @@
 from typing import Any
 
-from evalrag.config import get_settings
+from evalrag.config import get_settings, make_llm_client
 
 _ROUTER = (
     "Classify the question as one of: factual, multi-hop, abstract.\n"
@@ -24,8 +24,7 @@ class QueryTransformer:
 
     def __init__(self, client: object | None = None) -> None:
         if client is None:
-            from openai import OpenAI
-            client = OpenAI()
+            client = make_llm_client()
         self.client = client
         self.model = get_settings().ROUTER_MODEL
 

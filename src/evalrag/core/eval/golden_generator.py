@@ -3,6 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
 
+from evalrag.config import get_settings, make_llm_client
 from evalrag.core.ingest.chunker import Chunk
 
 _GEN_PROMPT = (
@@ -33,12 +34,11 @@ class GoldenQA:
 class GoldenGenerator:
     client: Any
 
-    def __init__(self, client: object | None = None, model: str = "gpt-4o-mini") -> None:
+    def __init__(self, client: object | None = None, model: str | None = None) -> None:
         if client is None:
-            from openai import OpenAI
-            client = OpenAI()
+            client = make_llm_client()
         self.client = client
-        self.model = model
+        self.model = model or get_settings().GOLDEN_MODEL
 
     def _stratified_sample(self, chunks: list[Chunk], n: int) -> list[Chunk]:
         if len(chunks) <= n:
