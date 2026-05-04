@@ -2,6 +2,8 @@
 
 Single-doc RAG with live trust scores and auto-generated eval sets. See `docs/superpowers/specs/2026-05-01-evalrag-design.md`.
 
+![EvalRAG demo — chat with live trust scores per answer](docs/images/demo.png)
+
 ## Prerequisites
 - Python 3.12
 - PostgreSQL 16 with [pgvector](https://github.com/pgvector/pgvector) installed locally
