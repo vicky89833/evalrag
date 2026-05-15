@@ -48,3 +48,16 @@ def test_low_faithfulness_forces_red():
     s = TrustScorer(judge=j)
     out = s.score(_answer(), [_hit(1)], query="q")
     assert out.band == "red"
+
+
+def test_low_relevance_refusal_is_amber_not_green():
+    j = MagicMock()
+    j.judge.return_value = 1.0
+    s = TrustScorer(judge=j)
+    out = s.score(
+        _answer(text="The document does not contain an answer to that question.", cites=()),
+        [_hit(1, "unrelated",)],
+        query="q",
+    )
+    assert out.overall < 80
+    assert out.band == "amber"

@@ -19,13 +19,13 @@ def test_factual_returns_raw_query():
 def test_multi_hop_decomposes():
     t = QueryTransformer(client=_client("multi-hop", "Q1?\nQ2?\nQ3?"))
     out = t.transform("Compare X and Y over time")
-    assert out == ["Q1?", "Q2?", "Q3?"]
+    assert out == ["Compare X and Y over time", "Q1?", "Q2?", "Q3?"]
 
 
 def test_abstract_uses_hyde():
     t = QueryTransformer(client=_client("abstract", "Hypothetical answer paragraph."))
     out = t.transform("Discuss the philosophy")
-    assert out == ["Hypothetical answer paragraph."]
+    assert out == ["Discuss the philosophy", "Hypothetical answer paragraph."]
 
 
 def test_unknown_classification_falls_back_to_raw():

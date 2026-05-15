@@ -1,4 +1,5 @@
 from dataclasses import replace
+from math import exp
 
 from sentence_transformers import CrossEncoder
 
@@ -13,6 +14,7 @@ class Reranker:
     def rerank(self, query: str, hits: list[Hit], top: int) -> list[Hit]:
         if not hits:
             return []
-        scores = self._model.predict([(query, h.text) for h in hits])
-        ranked = sorted(zip(hits, scores, strict=True), key=lambda p: float(p[1]), reverse=True)
-        return [replace(h, score=float(s), source="rerank") for h, s in ranked[:top]]
+        raw_scores = self._model.predict([(query, h.text) for h in hits])
+        scored = [(h, 1.0 / (1.0 + exp(-float(s)))) for h, s in zip(hits, raw_scores, strict=True)]
+        ranked = sorted(scored, key=lambda p: p[1], reverse=True)
+        return [replace(h, score=s, source="rerank") for h, s in ranked[:top]]

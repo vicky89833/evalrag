@@ -5,7 +5,10 @@ ANSWER_SYSTEM = (
     "2. Cite every sentence with one or more inline markers like [1], [2].\n"
     "3. If the chunks do not contain the answer, reply exactly: "
     '"The document does not contain an answer to that question."\n'
-    "4. Never apologize or hedge. Be direct.\n"
+    "4. For short keyword-style inputs, summarize the matching topic from the chunks.\n"
+    "5. You may make direct, evidence-backed inferences from dates or labels in the chunks; "
+    "for example, a role marked Present is the current role.\n"
+    "6. Never apologize or hedge. Be direct.\n"
 )
 
 

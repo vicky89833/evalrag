@@ -4,17 +4,26 @@ Single-doc RAG with live trust scores and auto-generated eval sets. See `docs/su
 
 ![EvalRAG demo — chat with live trust scores per answer](docs/images/demo.png)
 
+## Demo
+
+<video src="docs/videos/evalrag_demo.mp4" controls width="100%">
+  EvalRAG demo: upload a document, ask grounded questions, inspect citations,
+  trust scores, and retrieved chunks.
+</video>
+
+The demo shows document upload, hybrid retrieval, citation-grounded answering,
+live trust scoring, and retrieved evidence inspection.
+
 ## Prerequisites
 - Python 3.12
 - PostgreSQL 16 with [pgvector](https://github.com/pgvector/pgvector) installed locally
 - A user `evalrag` and database `evalrag` (see "Postgres setup" below)
 
 ## Quick start
-1. `python3.12 -m venv .venv` (one-time)
-2. `cp .env.example .env` — fill in `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`; adjust `DATABASE_URL` if your Postgres differs
-3. `make install`
-4. `make migrate`
-5. `make api` (terminal 1) and `make ui` (terminal 2)
+1. `cp .env.example .env` — fill in `GEMINI_API_KEY` or `OPENAI_API_KEY`; adjust `DATABASE_URL` if your Postgres differs
+2. `make install` — creates `.venv` with Python 3.12 and installs dependencies
+3. `make migrate`
+4. `make api` (terminal 1) and `make ui` (terminal 2)
 
 ## Postgres setup (one-time)
 ```bash
@@ -27,7 +36,7 @@ If pgvector isn't packaged for your Postgres install, build from source against 
 ## Demo run
 
 1. Ensure Postgres is running with the `evalrag` user/db and `vector` extension (see "Postgres setup").
-2. `make install` — install deps into the venv.
+2. `make install` — create `.venv` if needed and install deps into it.
 3. `make migrate` — apply migrations (creates 5 tables + ts_vec trigger).
 4. `make api` (terminal 1) — boots FastAPI on port 8000.
 5. Drop a PDF/DOCX/MD/TXT at `evals/canonical.pdf`, then `python scripts/seed_demo_doc.py` (terminal 2). Capture the `id` from the JSON output — that's the `doc_id`.

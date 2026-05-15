@@ -1,8 +1,12 @@
 import statistics
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
+import numpy as np
+from pydantic import SecretStr
+
+from evalrag.config import get_settings
 from evalrag.core.eval.golden_generator import GoldenQA
 from evalrag.core.eval.regression_runner import REFUSAL_PHRASE
 
@@ -18,12 +22,54 @@ def _ragas_evaluate(samples: list[dict[str, Any]]) -> dict[str, float]:
     """Wrap RAGAS — isolated for easy mocking."""
     from datasets import Dataset
     from ragas import evaluate as r_evaluate
+    from ragas.embeddings.base import BaseRagasEmbeddings
     from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
+
+    from evalrag.core.ingest.embedder import Embedder
+
+    class EvalRAGEmbeddings(BaseRagasEmbeddings):
+        def __init__(self) -> None:
+            super().__init__()
+            self._embedder = Embedder()
+
+        def embed_query(self, text: str) -> list[float]:
+            return cast(list[float], self._embedder.embed([text])[0].tolist())
+
+        def embed_documents(self, texts: list[str]) -> list[list[float]]:
+            vectors = self._embedder.embed(texts)
+            if isinstance(vectors, np.ndarray):
+                return cast(list[list[float]], vectors.tolist())
+            return vectors
+
+        async def aembed_query(self, text: str) -> list[float]:
+            return self.embed_query(text)
+
+        async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
+            return self.embed_documents(texts)
+
+    s = get_settings()
+    api_key = s.GEMINI_API_KEY
+    if not api_key:
+        raise RuntimeError("L2 evaluation requires GEMINI_API_KEY")
+
+    from langchain_openai import ChatOpenAI
+
+    judge_llm = ChatOpenAI(
+        model=s.JUDGE_MODEL,
+        api_key=SecretStr(api_key),
+        base_url=s.LLM_BASE_URL,
+        temperature=0.0,
+        timeout=60,
+        max_retries=2,
+    )
 
     ds = Dataset.from_list(samples)
     result = r_evaluate(
         dataset=ds,
         metrics=[faithfulness, answer_relevancy, context_precision, context_recall],
+        llm=judge_llm,
+        embeddings=EvalRAGEmbeddings(),
+        show_progress=False,
     )
     df = result.to_pandas()  # type: ignore[union-attr]
     return {k: float(v) for k, v in df.mean(numeric_only=True).items()}
@@ -48,7 +94,11 @@ def evaluate(qas: list[GoldenQA], query_fn: Callable[[str], dict[str, Any]]) -> 
             per_q.append({"q": qa.question, "adversarial": True,
                           "refused": REFUSAL_PHRASE in res.get("answer", "")})
             continue
-        contexts = [t.get("chunk_id", "") for t in res.get("retrieval_trace", [])]
+        contexts = [
+            t.get("text") or t.get("chunk_id", "")
+            for t in res.get("retrieval_trace", [])
+            if isinstance(t, dict)
+        ]
         samples.append({
             "question": qa.question,
             "answer": res.get("answer", ""),

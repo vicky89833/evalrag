@@ -59,7 +59,7 @@ def _band(
 ) -> str:
     # Refusals legitimately have no citations — judge them on faithfulness alone.
     if _REFUSAL_RE.search(answer_text):
-        return "green" if faithfulness >= 0.8 else "amber"
+        return "green" if faithfulness >= 0.8 and overall >= 80 else "amber"
     if faithfulness < 0.5 or citation_coverage == 0.0:
         return "red"
     if overall >= 80:

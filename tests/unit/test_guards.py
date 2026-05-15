@@ -16,3 +16,10 @@ def test_strip_injection_drops_chunks_with_attack_phrases():
     out = _strip_injection(hits)
     ids = {h.chunk_id for h in out}
     assert "a" in ids and "b" not in ids
+
+
+def test_strip_injection_keeps_benign_system_prompt_mentions():
+    hits = [
+        Hit("a", "d", "Built configurable system prompts for an AI agent.", 0.9, "rerank"),
+    ]
+    assert _strip_injection(hits) == hits

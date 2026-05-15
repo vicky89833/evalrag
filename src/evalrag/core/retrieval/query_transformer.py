@@ -45,7 +45,7 @@ class QueryTransformer:
                 for ln in self._call(_DECOMP.format(q=question)).splitlines()
                 if ln.strip()
             ]
-            return lines or [question]
+            return [question, *lines] if lines else [question]
         if cls.startswith("abstract"):
-            return [self._call(_HYDE.format(q=question))]
+            return [question, self._call(_HYDE.format(q=question))]
         return [question]

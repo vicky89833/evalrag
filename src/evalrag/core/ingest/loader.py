@@ -46,22 +46,34 @@ def _load_pdf(p: Path) -> str:
         reader = pypdf.PdfReader(str(p))
         if reader.is_encrypted:
             raise LoaderError("encrypted pdf not supported")
-        parts = [page.extract_text() or "" for page in reader.pages]
-        text = "\n".join(parts)
-        if text.strip():
-            return text
     except LoaderError:
         raise
     except (PdfReadError, ValueError, OSError) as e:
-        log.warning("pypdf failed on %s, trying pdfplumber: %s", p.name, e)
-    # fallback: pdfplumber (covers cases where pypdf returns empty or raises a parse error)
+        log.warning("pdf encryption check failed on %s, continuing: %s", p.name, e)
+
+    # pdfplumber with a tighter x_tolerance preserves spaces better for
+    # resume-style PDFs with dense text, links, and inline bold spans.
     try:
         import pdfplumber
 
         with pdfplumber.open(str(p)) as pdf:
-            return "\n".join((page.extract_text() or "") for page in pdf.pages)
+            text = "\n".join(
+                (page.extract_text(x_tolerance=2) or "") for page in pdf.pages
+            )
+        if text.strip():
+            return text
     except Exception as e:
+        log.warning("pdfplumber failed on %s, trying pypdf: %s", p.name, e)
+
+    try:
+        reader = pypdf.PdfReader(str(p))
+        parts = [page.extract_text() or "" for page in reader.pages]
+        text = "\n".join(parts)
+        if text.strip():
+            return text
+    except (PdfReadError, ValueError, OSError) as e:
         raise LoaderError(f"pdf parse failed: {e}") from e
+    raise LoaderError("pdf parse failed: no extractable text")
 
 
 def _load_docx(p: Path) -> str:

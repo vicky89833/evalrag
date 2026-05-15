@@ -42,12 +42,19 @@ def run_l2(doc_id: UUID, api_base: str = "http://localhost:8000",
                          expected_answer_chunks=[qa.source_chunk_id] if qa.source_chunk_id else [],
                          is_adversarial=qa.is_adversarial))
         s.commit()
+        chunk_text_by_id = {
+            row.chunk_id: row.text
+            for row in s.query(Chunk.chunk_id, Chunk.text).filter_by(doc_id=doc_id).all()
+        }
 
     def query_fn(q: str) -> dict[str, Any]:
         r = httpx.post(f"{api_base}/query",
                        json={"doc_id": str(doc_id), "question": q}, timeout=60)
         r.raise_for_status()
         data: dict[str, Any] = r.json()
+        for hit in data.get("retrieval_trace", []):
+            if isinstance(hit, dict) and "chunk_id" in hit:
+                hit["text"] = chunk_text_by_id.get(hit["chunk_id"], "")
         return data
 
     try:

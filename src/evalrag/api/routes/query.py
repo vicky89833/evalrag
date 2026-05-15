@@ -35,7 +35,11 @@ _GENERATOR_DEP = Depends(get_generator)
 _TRUST_DEP = Depends(get_trust_scorer)
 _TRANSFORMER_DEP = Depends(get_query_transformer)
 
-_INJECTION_RE = re.compile(r"(ignore previous|system prompt|disregard.*instruction)", re.I)
+_INJECTION_RE = re.compile(
+    r"(ignore\s+(?:all\s+)?previous|disregard.*instruction|"
+    r"reveal.*system prompt|system prompt\s*:)",
+    re.I,
+)
 
 
 def _strip_injection(hits: list[Hit]) -> list[Hit]:
@@ -111,7 +115,11 @@ def query(
         if trust else None
     )
 
-    trace = [{"chunk_id": h.chunk_id, "score": h.score, "source": h.source} for h in top]
+    trace = [
+        {"chunk_id": h.chunk_id, "score": h.score, "source": h.source,
+         "text": h.text[:700]}
+        for h in top
+    ]
     log = QueryLog(doc_id=req.doc_id, question=req.question, answer=answer.text,
                    trust_score=trust_payload, retrieval_trace={"top": trace},
                    latency_ms=elapsed, cost_usd=answer.cost_usd)
