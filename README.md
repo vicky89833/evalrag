@@ -2,11 +2,10 @@
 
 Single-doc RAG with live trust scores and auto-generated eval sets. See `docs/superpowers/specs/2026-05-01-evalrag-design.md`.
 
-![EvalRAG demo — chat with live trust scores per answer](docs/images/demo_readme.png)
 
 ## Demo
 
-[![Watch the EvalRAG demo](docs/images/demo.png)](docs/videos/evalrag_demo.mp4)
+[![Watch the EvalRAG demo](docs/images/demo_readme.png)](docs/videos/evalrag_demo.mp4)
 
 **[Watch the 47-second demo video](docs/videos/evalrag_demo.mp4)**
 
