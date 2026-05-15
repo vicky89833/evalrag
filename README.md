@@ -5,9 +5,9 @@ Single-doc RAG with live trust scores and auto-generated eval sets. See `docs/su
 
 ## Demo
 
-[![Watch the EvalRAG demo](docs/images/demo_readme.png)](docs/videos/evalrag_demo.mp4)
+[![Watch the EvalRAG demo](docs/images/demo_readme.png)]()
 
-**[Watch the 47-second demo video](docs/videos/evalrag_demo.mp4)**
+**[Watch the 47-second demo video](https://youtu.be/ZAdjkCIk4Aw)**
 
 The demo shows document upload, hybrid retrieval, citation-grounded answering,
 live trust scoring, and retrieved evidence inspection.
